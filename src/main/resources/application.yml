@@ -1,0 +1,28 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: task-chat-api
+  profiles:
+    active: local
+
+  datasource:
+      url: jdbc:mysql://localhost:33061/task_chat_db?useUnicode=true&characterEncoding=utf8
+      username: task_local
+      password: 1234
+      driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  packages-to-scan: com.task.chat.api
+  paths-to-match: /api/**
+  model-and-view-allowed: true
