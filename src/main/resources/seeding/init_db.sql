@@ -1,7 +1,9 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS chat_room;
+DROP TABLE IF EXISTS chat_room_member;
 DROP TABLE IF EXISTS chat_member;
+DROP TABLE IF EXISTS chat_log;
 SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE chat_room
@@ -46,3 +48,30 @@ CREATE TABLE chat_log
 )
     COMMENT 'Chat Log Information'
     ENGINE=InnoDB DEFAULT CHARSET=utf8mb4  COLLATE utf8mb4_unicode_ci;
+
+
+INSERT INTO chat_member
+    (member_login_id, member_name, member_nickname, created_dt)
+VALUES
+    ('member1', 'member1', 'member1', NOW()),
+    ('member2', 'member2', 'member2', NOW()),
+    ('member3', 'member3', 'member3', NOW()),
+    ('member4', 'member4', 'member4', NOW()),
+    ('member5', 'member5', 'member5', NOW());
+
+INSERT INTO chat_room
+    (chat_room_name, creator_id, created_dt)
+VALUES
+    ('room1', 1, NOW()),
+    ('room2', 2, NOW());
+
+INSERT INTO chat_room_member
+    (chat_room_id, member_id, join_dt)
+VALUES
+    (1, 1, NOW()),
+    (1, 2, NOW()),
+    (2, 1, NOW()),
+    (2, 2, NOW()),
+    (2, 3, NOW()),
+    (2, 4, NOW()),
+    (2, 5, NOW());

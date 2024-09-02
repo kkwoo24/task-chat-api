@@ -15,11 +15,19 @@ data class ChatMember(
     val memberLoginId: String,
 
     @Column(name = "member_name")
-    val memberName: String,
+    val memberName: String? = null,
 
     @Column(name = "member_nickname")
-    val memberNickname: String,
+    val memberNickname: String? = null,
 
     @Column(name = "created_dt")
     val createdDateTime: LocalDateTime
-)
+) {
+    constructor() : this(
+        chatMemberId = null,
+        memberLoginId = "",
+        memberName = null,
+        memberNickname = null,
+        createdDateTime = LocalDateTime.now()
+    )
+}

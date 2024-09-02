@@ -30,6 +30,9 @@ dependencies {
 	implementation("mysql:mysql-connector-java:8.0.32")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.3")
 
+	implementation("org.springframework.kafka:spring-kafka")
+	implementation("org.springframework.boot:spring-boot-starter-websocket")
+
 	providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

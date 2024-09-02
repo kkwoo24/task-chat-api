@@ -7,4 +7,6 @@ import org.springframework.transaction.annotation.Transactional
 
 @Transactional
 @Repository
-interface ChatMemberRepository: JpaRepository<ChatMember, Int>
+interface ChatMemberRepository: JpaRepository<ChatMember, Int> {
+    fun findByMemberLoginId(memberLoginId: String): ChatMember?
+}

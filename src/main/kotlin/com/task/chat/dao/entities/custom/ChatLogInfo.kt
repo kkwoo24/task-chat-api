@@ -1,13 +1,11 @@
-package com.task.chat.dao.entities
+package com.task.chat.dao.entities.custom
 
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "chat_log")
-data class ChatLog(
+data class ChatLogInfo(
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "seq")
     val seq: Int?,
 
@@ -16,6 +14,15 @@ data class ChatLog(
 
     @Column(name = "member_id")
     val memberId: Int,
+
+    @Column(name = "member_login_id")
+    val memberLoginId: String,
+
+    @Column(name = "member_name")
+    val memberName: String?,
+
+    @Column(name = "member_nickname")
+    val memberNickname: String?,
 
     @Column(name = "message")
     val message: String,
