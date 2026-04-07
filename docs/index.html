@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Task Chat — 기술 스파이크 발표</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-slide: #ffffff;
+      --bg-slide-alt: #f1f5f9;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-subtle: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-soft: #eff6ff;
+      --accent-ring: rgba(37, 99, 235, 0.25);
+      --header-bg: rgba(255, 255, 255, 0.78);
+      --radius: 12px;
+      --radius-full: 999px;
+      --font: "IBM Plex Sans KR", system-ui, -apple-system, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+      --transition: 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+      /* 아키텍처 슬라이드: 개요·기술 선택과 동일한 파스텔 톤 (단색 막대) */
+      --arch-blue-soft: #6b93c9;
+      --arch-purple-soft: #9b8ec4;
+      --arch-blue-accent: #bfdbfe;
+      --arch-purple-accent: #ddd6fe;
+      /* 개요~마무리: 위→아래 미세 그라데이션 (거의 단색에 가깝게) */
+      --slide-gradient: linear-gradient(
+        to bottom,
+        #fcfdfe 0%,
+        #f8fafc 42%,
+        #f3f5f7 100%
+      );
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font);
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      z-index: 0;
+    }
+
+    /* —— 상단 고정 영역(목차): 본문과 분리되어 항상 위에 표시 —— */
+    .deck-header {
+      position: relative;
+      z-index: 100;
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      min-height: 3.25rem;
+      padding: 0.5rem 0.75rem 0.5rem 1rem;
+      background: var(--header-bg);
+      backdrop-filter: blur(16px) saturate(1.2);
+      -webkit-backdrop-filter: blur(16px) saturate(1.2);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(255,255,255,.6) inset;
+    }
+
+    @media (max-width: 900px) {
+      .deck-header {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        padding: 0.5rem 0.65rem;
+        gap: 0.5rem;
+      }
+      .deck-brand { justify-self: start; }
+      .deck-toc-wrap { order: 2; max-width: 100%; }
+      .deck-meta { order: 3; justify-self: stretch; }
+    }
+
+    .deck-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      padding-right: 0.5rem;
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 900px) {
+      .deck-brand {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 0.15rem 0 0.5rem;
+        width: 100%;
+      }
+    }
+
+    .deck-brand strong {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .deck-brand span {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--text-subtle);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .deck-toc-wrap {
+      position: relative;
+      min-width: 0;
+      mask-image: linear-gradient(90deg, #000 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent 100%);
+    }
+
+    @media (max-width: 900px) {
+      .deck-toc-wrap {
+        mask-image: none;
+        -webkit-mask-image: none;
+      }
+    }
+
+    .deck-toc {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.35rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.2rem 0.25rem 0.35rem 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .deck-toc::-webkit-scrollbar { height: 4px; }
+    .deck-toc::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .toc-item {
+      flex: 0 0 auto;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--bg-slide);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 0.4rem 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .toc-item:hover {
+      color: var(--accent);
+      border-color: #bfdbfe;
+      background: var(--accent-soft);
+    }
+
+    .toc-item:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    .toc-item.is-active {
+      color: #fff;
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .toc-item.is-active:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      color: #fff;
+    }
+
+    .deck-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .deck-counter {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-subtle);
+      padding: 0.35rem 0.65rem;
+      background: var(--bg-slide-alt);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      min-width: 4.5rem;
+      text-align: center;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-slide);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .icon-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    .icon-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* —— 슬라이드 영역(남은 뷰포트 전부) —— */
+    .deck-shell {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .deck-viewport {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      touch-action: pan-y;
+    }
+
+    .deck-track {
+      display: flex;
+      height: 100%;
+      will-change: transform;
+      transition: transform var(--transition);
+    }
+
+    .slide {
+      flex: 0 0 100%;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--bg-slide);
+    }
+
+    /* 개요부터 마무리까지: 표지(slide--hero)만 단색, 나머지는 그라데이션 */
+    .slide:not(.slide--hero) {
+      background: var(--slide-gradient);
+    }
+
+    .slide-inner {
+      max-width: 52rem;
+      margin: 0 auto;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: clamp(1rem, 3vw, 1.75rem) clamp(1rem, 4vw, 2rem) clamp(1.5rem, 4vw, 2.5rem);
+    }
+
+    .slide--hero .slide-inner {
+      max-width: 40rem;
+      justify-content: center;
+      text-align: left;
+    }
+
+    .slide--diagram .slide-inner {
+      max-width: min(1200px, 100%);
+    }
+
+    /* 기술 선택: 슬라이드 본문 높이를 표·텍스트 분량만큼만 (아래 빈 여백 최소화) */
+    .slide--tech.slide--diagram .slide-inner {
+      min-height: unset;
+      flex: 0 1 auto;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 0.3rem 0.75rem;
+      border-radius: var(--radius-full);
+      margin-bottom: 1rem;
+      width: fit-content;
+    }
+
+    .badge::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .slide--hero h1 {
+      font-size: clamp(1.85rem, 5.5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+      margin: 0 0 0.85rem;
+    }
+
+    .hero-lead {
+      font-size: clamp(1rem, 2.2vw, 1.125rem);
+      color: var(--text-muted);
+      margin: 0 0 1.5rem;
+      line-height: 1.65;
+    }
+
+    .repo-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .repo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.45rem 0.9rem 0.45rem 0.75rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text);
+      text-decoration: none;
+      background: var(--bg-slide);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      transition: border-color 0.2s, box-shadow 0.2s, color 0.15s;
+    }
+
+    .repo-link:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-ring);
+      color: var(--accent);
+    }
+
+    .repo-link:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .repo-link svg { flex-shrink: 0; opacity: 0.55; }
+    .repo-link:hover svg { opacity: 0.85; }
+    .repo-link .slug {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+    }
+    .repo-link .ext-mark { font-size: 0.65rem; opacity: 0.45; }
+
+    .section-num {
+      font-family: var(--mono);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      margin-bottom: 0.35rem;
+    }
+
+    .slide h2 {
+      font-size: clamp(1.35rem, 3.5vw, 1.65rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.45rem;
+    }
+
+    .section-desc {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: clamp(0.9rem, 2vw, 1rem);
+      max-width: 48ch;
+      line-height: 1.58;
+    }
+
+    /* 기술 선택: 가독성 위한 구분별 카드 리스트 (표 대신) */
+    .stack-readable {
+      margin-top: 1rem;
+      width: 100%;
+      max-width: min(1200px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 1.35rem;
+    }
+
+    .stack-readable__title {
+      margin: 0;
+      font-size: clamp(0.9375rem, 2.2vw, 1.0625rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .stack-cluster {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .stack-cluster__label {
+      margin: 0;
+      padding: 0 0.1rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+    }
+
+    .stack-cluster--backend .stack-cluster__label { color: #2563eb; }
+    .stack-cluster--frontend .stack-cluster__label { color: #7c3aed; }
+    .stack-cluster--infra .stack-cluster__label { color: #059669; }
+
+    .stack-cluster__items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .stack-item {
+      margin: 0;
+      padding: 0.85rem 1rem 0.95rem;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .stack-cluster--backend .stack-item {
+      border-left: 4px solid #bfdbfe;
+    }
+
+    .stack-cluster--frontend .stack-item {
+      border-left: 4px solid #ddd6fe;
+    }
+
+    .stack-cluster--infra .stack-item {
+      border-left: 4px solid #a7f3d0;
+    }
+
+    .stack-item__title {
+      margin: 0 0 0.45rem;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.35;
+    }
+
+    .stack-item__detail {
+      margin: 0;
+      font-size: clamp(0.875rem, 1.9vw, 0.9375rem);
+      line-height: 1.65;
+      color: #475569;
+    }
+
+    .stack-item__detail strong {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .stack-item__detail code {
+      font-family: var(--mono);
+      font-size: 0.82em;
+      padding: 0.12em 0.4em;
+      border-radius: 5px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+    }
+
+    /* 기술 선택 슬라이드 레이아웃 */
+    .slide--tech .slide-inner {
+      max-width: min(1200px, 100%);
+      justify-content: flex-start;
+    }
+
+    .slide--tech .stack-readable-wrap {
+      flex: 0 0 auto;
+      align-self: stretch;
+      margin-top: 0.65rem;
+      width: 100%;
+    }
+
+    .slide--tech .section-desc {
+      max-width: 62ch;
+    }
+
+    .slide--tech .section-desc code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      padding: 0.1em 0.35em;
+      background: var(--bg-slide-alt);
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    /* 개요 슬라이드: 항목별 박스 UI */
+    .overview-board-wrap {
+      flex: 1;
+      min-height: 0;
+      margin-top: 1rem;
+      width: 100%;
+      max-width: min(1200px, 100%);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .overview-board {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(0.75rem, 2vw, 1.15rem);
+    }
+
+    @media (max-width: 640px) {
+      .overview-board {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .overview-card {
+      margin: 0;
+      padding: 0;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .overview-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    /* 기술 선택 stack-item과 동일: 왼쪽 컬러 라인 */
+    .overview-card--backend {
+      border-left: 4px solid #bfdbfe;
+    }
+
+    .overview-card--kafka {
+      border-left: 4px solid #fcd34d;
+    }
+
+    .overview-card--docker {
+      border-left: 4px solid #a7f3d0;
+    }
+
+    .overview-card--frontend {
+      border-left: 4px solid #ddd6fe;
+    }
+
+    .overview-card__body {
+      padding: 0.85rem 1rem 1rem;
+    }
+
+    .overview-card__title {
+      margin: 0 0 0.65rem;
+      font-size: clamp(0.95rem, 2.2vw, 1.0625rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .overview-card__list {
+      margin: 0;
+      padding: 0 0 0 1.1rem;
+      color: var(--text-muted);
+      font-size: clamp(0.8125rem, 1.8vw, 0.9375rem);
+      line-height: 1.55;
+    }
+
+    .overview-card__list li {
+      margin-bottom: 0.35rem;
+    }
+
+    .overview-card__list li:last-child {
+      margin-bottom: 0;
+    }
+
+    .slide-diagram {
+      flex: 1;
+      min-height: 12rem;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    figure.diagram {
+      margin: 0 auto;
+      width: 100%;
+      max-width: 1200px;
+      max-height: 100%;
+      padding: clamp(0.65rem, 2vw, 1rem);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-slide);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .slide--alt figure.diagram {
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    figure.diagram img,
+    figure.diagram svg {
+      width: 70%;
+      max-width: 840px;
+      height: auto;
+      max-height: min(75vh, 1200px);
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    figure.diagram svg {
+      max-width: 1200px;
+      vertical-align: top;
+    }
+
+    .diagram--sequence img,
+    .diagram--sequence svg {
+      width: 100%;
+      max-width: 1200px;
+      max-height: min(82vh, 1320px);
+    }
+
+    /* 시퀀스 슬라이드만 박스/이미지 확대 (공통 diagram 스타일 예외) */
+    #slide-3 .slide-inner {
+      max-width: min(1400px, 100%);
+    }
+
+    #slide-3 .diagram--sequence {
+      width: 100%;
+      max-width: min(1360px, 100%);
+      padding: clamp(0.35rem, 1vw, 0.55rem);
+    }
+
+    #slide-3 .diagram--sequence img,
+    #slide-3 .diagram--sequence svg {
+      width: 100% !important;
+      max-width: none !important;
+      max-height: min(88vh, 1500px) !important;
+    }
+
+    .diagram-remote-fallback {
+      margin: 0;
+      padding: clamp(1.5rem, 4vw, 2.5rem) 1rem;
+      text-align: center;
+      font-size: clamp(0.875rem, 1.9vw, 0.9375rem);
+      color: var(--text-muted);
+      line-height: 1.65;
+      min-height: min(40vh, 360px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .diagram-remote-fallback[hidden] {
+      display: none !important;
+    }
+
+    /* 백엔드 레이어드 아키텍처 (task-chat-api 패키지 구조 요약, build_interview_deck gen_slide04_layered 와 동일) */
+    figure.diagram.diagram--layers {
+      align-items: stretch;
+      background: var(--bg-slide);
+      background-image: none;
+    }
+
+    .layer-arch {
+      width: 100%;
+      max-width: 52rem;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      text-align: left;
+    }
+
+    .layer-arch__block {
+      display: flex;
+      align-items: stretch;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fafbfc;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .layer-arch__block:nth-child(3),
+    .layer-arch__block:nth-child(7) {
+      background: #f8fafc;
+    }
+
+    .layer-arch__accent {
+      width: 5px;
+      flex-shrink: 0;
+      background: var(--arch-blue-accent);
+    }
+
+    .layer-arch__body {
+      padding: 0.65rem 0.9rem 0.7rem;
+      min-width: 0;
+    }
+
+    .layer-arch__name {
+      margin: 0 0 0.25rem;
+      font-size: clamp(0.9rem, 2vw, 1rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--arch-blue-soft);
+    }
+
+    .layer-arch__detail {
+      margin: 0;
+      font-size: clamp(0.78rem, 1.65vw, 0.875rem);
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    .layer-arch__detail code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      color: var(--text);
+      background: rgba(15, 23, 42, 0.06);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+
+    .layer-arch__flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem 0 0.35rem;
+      color: var(--text-subtle);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      user-select: none;
+    }
+
+    .layer-arch__flow span {
+      opacity: 0.85;
+    }
+
+    .layer-arch--fe .layer-arch__accent {
+      background: var(--arch-purple-accent);
+    }
+
+    .layer-arch--fe .layer-arch__name {
+      color: var(--arch-purple-soft);
+    }
+
+    .arch-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(0.75rem, 2.5vw, 1.25rem);
+      width: 100%;
+      align-items: start;
+    }
+
+    .arch-split__head {
+      margin: 0 0 0.4rem;
+      font-size: clamp(0.7rem, 1.5vw, 0.8125rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .arch-split__col:first-child .arch-split__head {
+      color: var(--arch-blue-soft);
+    }
+
+    .arch-split__col:last-child .arch-split__head {
+      color: var(--arch-purple-soft);
+    }
+
+    .arch-split__col {
+      min-width: 0;
+    }
+
+    @media (max-width: 900px) {
+      .arch-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 구현 화면: 2×2 캡처 그리드 */
+    .slide--impl .slide-inner {
+      max-width: min(1200px, 100%);
+    }
+
+    .impl-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(0.5rem, 1.5vw, 0.85rem);
+      width: 100%;
+      margin-top: 0.35rem;
+    }
+
+    @media (max-width: 720px) {
+      .impl-gallery {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .impl-shot {
+      margin: 0;
+      padding: clamp(0.45rem, 1.2vw, 0.65rem);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-slide);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-height: 0;
+    }
+
+    .impl-shot img {
+      width: 100%;
+      height: auto;
+      max-height: min(30vh, 300px);
+      object-fit: contain;
+      object-position: top center;
+      display: block;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .impl-shot figcaption {
+      margin: 0;
+      font-size: clamp(0.7rem, 1.5vw, 0.8125rem);
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: -0.01em;
+      line-height: 1.35;
+    }
+
+    .close-summary {
+      width: 100%;
+      max-width: 64rem;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .close-summary__lead,
+    .close-summary__item {
+      margin: 0;
+      border: 1px solid var(--border);
+      border-left: 4px solid #bfdbfe;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      color: var(--text-muted);
+      line-height: 1.65;
+      font-size: clamp(0.9rem, 1.85vw, 1rem);
+      padding: 0.85rem 1rem 0.95rem;
+    }
+
+    .close-summary__lead {
+      border-left-color: #a7f3d0;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .close-summary__list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .close-summary__item {
+      border-left-color: #ddd6fe;
+    }
+
+    /* 좌우 오버레이 버튼 */
+    .deck-nav-fab {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 50;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+      transition: color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .deck-nav-fab:hover {
+      color: var(--accent);
+      border-color: #bfdbfe;
+      box-shadow: 0 6px 24px rgba(37, 99, 235, 0.12);
+    }
+
+    .deck-nav-fab:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    .deck-nav-fab:disabled {
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    .deck-nav-fab--prev { left: clamp(0.35rem, 2vw, 1rem); }
+    .deck-nav-fab--next { right: clamp(0.35rem, 2vw, 1rem); }
+
+    @media (max-width: 520px) {
+      .deck-nav-fab { width: 2.4rem; height: 2.4rem; }
+      .deck-nav-fab--prev { left: 0.25rem; }
+      .deck-nav-fab--next { right: 0.25rem; }
+    }
+
+    .kbd-hint {
+      position: fixed;
+      bottom: 0.65rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 90;
+      font-size: 0.6875rem;
+      color: var(--text-subtle);
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    .kbd-hint kbd {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-slide-alt);
+      margin: 0 0.1rem;
+    }
+
+    @media (max-width: 600px) {
+      .kbd-hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="deck-header">
+    <div class="deck-brand">
+      <strong>Task Chat</strong>
+      <span>기술 스파이크</span>
+    </div>
+    <div class="deck-toc-wrap">
+      <nav class="deck-toc" id="deckToc" aria-label="슬라이드 목차"></nav>
+    </div>
+    <div class="deck-meta">
+      <span class="deck-counter" id="deckCounter" aria-live="polite">1 / 8</span>
+      <button type="button" class="icon-btn" id="btnPrevTop" aria-label="이전 슬라이드">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="btnNextTop" aria-label="다음 슬라이드">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="deck-shell">
+    <div class="deck-viewport" id="deckViewport">
+      <button type="button" class="deck-nav-fab deck-nav-fab--prev" id="btnPrevSide" aria-label="이전 슬라이드">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 6l-6 6 6 6"/></svg>
+      </button>
+      <button type="button" class="deck-nav-fab deck-nav-fab--next" id="btnNextSide" aria-label="다음 슬라이드">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 6l6 6-6 6"/></svg>
+      </button>
+
+      <div class="deck-track" id="deckTrack" role="region" aria-roledescription="슬라이드" aria-label="발표 슬라이드">
+        <!-- 0 표지 -->
+        <article class="slide slide--hero" id="slide-0" data-title="표지" aria-hidden="false">
+          <div class="slide-inner">
+            <div class="badge">스터디 · 토이 프로젝트</div>
+            <h1>Task Chat<br />기술 스파이크 발표</h1>
+            <p class="hero-lead">
+              React, Spring(Kotlin), Kafka, WebSocket 등 평소 덜 쓰던 스택을 빠르게 얹어 보며
+              도입 가능성과 연동 포인트를 검증한 실험 프로젝트입니다.
+            </p>
+            <div class="repo-links">
+              <a class="repo-link" href="https://github.com/kkwoo24/task-chat-api" target="_blank" rel="noopener noreferrer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                <span class="slug">task-chat-api</span><span class="ext-mark">↗</span>
+              </a>
+              <a class="repo-link" href="https://github.com/kkwoo24/task-chat-front" target="_blank" rel="noopener noreferrer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                <span class="slug">task-chat-front</span><span class="ext-mark">↗</span>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <!-- 1 개요 -->
+        <article class="slide slide--diagram slide--overview" id="slide-1" data-title="개요" aria-hidden="true">
+          <div class="slide-inner">
+            <div class="section-num">01</div>
+            <h2>프로젝트 개요</h2>
+            <p class="section-desc">
+              평소 업무에서 익숙하게 쓰지 않던 기술을 작은 범위의 채팅 흐름에 직접 얹어 보며, 기술적·운영적 실현 가능성과 리스크를 가볍게 점검하는 기술 스파이크에 가깝습니다.
+            </p>
+
+            <div class="overview-board-wrap">
+              <div class="overview-board" role="group" aria-label="프로젝트 구성 항목">
+                <article class="overview-card overview-card--backend">
+                  <div class="overview-card__body">
+                    <h3 class="overview-card__title">백엔드 설계 · API</h3>
+                    <ul class="overview-card__list">
+                      <li>레이어드 아키텍처로 구성</li>
+                      <li>REST API · Swagger · CORS</li>
+                    </ul>
+                  </div>
+                </article>
+                <article class="overview-card overview-card--kafka">
+                  <div class="overview-card__body">
+                    <h3 class="overview-card__title">Kafka 연동</h3>
+                    <ul class="overview-card__list">
+                      <li>토픽, 메시지 발행 연동</li>
+                      <li>Producer · Consumer 구성</li>
+                    </ul>
+                  </div>
+                </article>
+                <article class="overview-card overview-card--docker">
+                  <div class="overview-card__body">
+                    <h3 class="overview-card__title">Docker 구성</h3>
+                    <ul class="overview-card__list">
+                      <li>MySQL</li>
+                      <li>Kafka</li>
+                    </ul>
+                  </div>
+                </article>
+                <article class="overview-card overview-card--frontend">
+                  <div class="overview-card__body">
+                    <h3 class="overview-card__title">프론트엔드 설계</h3>
+                    <ul class="overview-card__list">
+                      <li>SPA 화면 구성</li>
+                      <li>react</li>
+                    </ul>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 2 기술 선택 -->
+        <article class="slide slide--diagram slide--tech" id="slide-2" data-title="기술 선택" aria-hidden="true">
+          <div class="slide-inner">
+            <div class="section-num">02</div>
+            <h2>기술 선택</h2>
+            <p class="section-desc">
+              <code>task-chat-api</code> · <code>task-chat-front</code> 저장소 의존성을 기준으로, 적용한 기술과 버전을 구분별로 정리했습니다.
+            </p>
+            <div class="stack-readable-wrap">
+              <div class="stack-readable" role="region" aria-labelledby="stackReadableTitle">
+                
+                <div class="stack-cluster stack-cluster--backend">
+                  <p class="stack-cluster__label">백엔드 · task-chat-api</p>
+                  <div class="stack-cluster__items">
+                    <section class="stack-item">
+                      <h4 class="stack-item__title">백엔드 코어</h4>
+                      <p class="stack-item__detail">Kotlin <strong>1.9.25</strong> · Java <strong>17</strong> · Spring Boot <strong>3.3.3</strong></p>
+                    </section>
+                    <section class="stack-item">
+                      <h4 class="stack-item__title">API 문서</h4>
+                      <p class="stack-item__detail">springdoc-openapi <strong>2.0.2</strong> (Swagger UI), swagger-annotations <strong>2.1.10</strong></p>
+                    </section>
+                    <section class="stack-item">
+                      <h4 class="stack-item__title">메시징 · 실시간</h4>
+                      <p class="stack-item__detail">Spring Kafka, Spring WebSocket</p>
+                    </section>
+                  </div>
+                </div>
+
+                <div class="stack-cluster stack-cluster--frontend">
+                  <p class="stack-cluster__label">프론트엔드 · task-chat-front</p>
+                  <div class="stack-cluster__items">
+                    <section class="stack-item">
+                      <h4 class="stack-item__title">프론트 코어</h4>
+                      <p class="stack-item__detail">React <strong>18.3.1</strong>, react-dom, Create React App (<code>react-scripts</code> <strong>5.0.1</strong>)</p>
+                    </section>
+                    <section class="stack-item">
+                      <h4 class="stack-item__title">프론트 HTTP</h4>
+                      <p class="stack-item__detail">Axios <strong>^1.7.6</strong></p>
+                    </section>
+                  </div>
+                </div>
+
+                <div class="stack-cluster stack-cluster--infra">
+                  <p class="stack-cluster__label">인프라 · 로컬 실행</p>
+                  <div class="stack-cluster__items">
+                    <section class="stack-item">
+                      <h4 class="stack-item__title">Docker Compose</h4>
+                      <p class="stack-item__detail">MySQL(MariaDB) DB, Zookeeper, Kafka (Confluent), Kafka Manager</p>
+                    </section>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 3 시퀀스 -->
+        <article class="slide slide--diagram slide--alt" id="slide-3" data-title="시퀀스" aria-hidden="true">
+          <div class="slide-inner">
+            <div class="section-num">03</div>
+            <h2>화면·API 시퀀스</h2>
+            <p class="section-desc">로그인 후 채팅방 목록과 로그는 REST로 조회하고, WebSocket과 Kafka로 실시간 상태·메시지를 동기화합니다.</p>
+            <div class="slide-diagram">
+              <figure class="diagram diagram--sequence">
+                <img
+                  id="seqDiagramRemote"
+                  src="https://raw.githubusercontent.com/kkwoo24/task-chat-api/master/assets/diagram.svg"
+                  width="1200"
+                  height="720"
+                  alt="로그인·채팅방 목록·채팅 로그·실시간 동기화 시퀀스"
+                  loading="lazy"
+                  decoding="async"
+                  onerror="this.style.display='none'; var el=document.getElementById('seqDiagramFallback'); if(el){ el.hidden=false; }"
+                />
+                <p id="seqDiagramFallback" class="diagram-remote-fallback" hidden role="alert">이미지 로딩에 실패했습니다. 인터넷 연결을 확인해주세요.</p>
+              </figure>
+            </div>
+          </div>
+        </article>
+
+        <!-- 4 ERD -->
+        <article class="slide slide--diagram slide--alt" id="slide-4" data-title="ERD" aria-hidden="true">
+          <div class="slide-inner">
+            <div class="section-num">04</div>
+            <h2>데이터 모델</h2>
+            <p class="section-desc">회원, 방, 방-멤버 관계, 채팅 로그로 구성됩니다. 메시지는 저장 시 암호화됩니다.</p>
+            <div class="slide-diagram">
+              <figure class="diagram">
+                <img src="./img/erd.svg" width="1200" height="720" alt="ERD" loading="lazy" decoding="async" />
+              </figure>
+            </div>
+          </div>
+        </article>
+
+        <!-- 5 아키텍처 -->
+        <article class="slide slide--diagram" id="slide-5" data-title="아키텍처" aria-hidden="true">
+          <div class="slide-inner">
+            <div class="section-num">05</div>
+            <h2>애플리케이션 아키텍처</h2>
+            <p class="section-desc"><strong>task-chat-api</strong>는 패키지 기준 레이어드 구조, <strong>task-chat-front</strong>는 React(CRA) SPA 기준으로 표현·연동·진입 역할을 나눴습니다.</p>
+            <div class="slide-diagram">
+              <figure class="diagram diagram--layers">
+                <div class="arch-split">
+                  <div class="arch-split__col">
+                    <p class="arch-split__head">백엔드 · task-chat-api</p>
+                    <div class="layer-arch" role="group" aria-label="백엔드 레이어 구조">
+                      <div class="layer-arch__block">
+                        <div class="layer-arch__accent" aria-hidden="true"></div>
+                        <div class="layer-arch__body">
+                          <h3 class="layer-arch__name">Presentation</h3>
+                          <p class="layer-arch__detail">Controller · WebSocket 엔드포인트 · DTO</p>
+                        </div>
+                      </div>
+                      <div class="layer-arch__flow" aria-hidden="true"><span>▼</span></div>
+                      <div class="layer-arch__block">
+                        <div class="layer-arch__accent" aria-hidden="true"></div>
+                        <div class="layer-arch__body">
+                          <h3 class="layer-arch__name">Application</h3>
+                          <p class="layer-arch__detail">ChatService · LoginService · Kafka Producer / Consumer</p>
+                        </div>
+                      </div>
+                      <div class="layer-arch__flow" aria-hidden="true"><span>▼</span></div>
+                      <div class="layer-arch__block">
+                        <div class="layer-arch__accent" aria-hidden="true"></div>
+                        <div class="layer-arch__body">
+                          <h3 class="layer-arch__name">Domain / Persistence</h3>
+                          <p class="layer-arch__detail">Entity · Spring Data Repository</p>
+                        </div>
+                      </div>
+                      <div class="layer-arch__flow" aria-hidden="true"><span>▼</span></div>
+                      <div class="layer-arch__block">
+                        <div class="layer-arch__accent" aria-hidden="true"></div>
+                        <div class="layer-arch__body">
+                          <h3 class="layer-arch__name">Cross-cutting</h3>
+                          <p class="layer-arch__detail">Config · Swagger · CORS · 암호화 · WS 핸들러</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="arch-split__col">
+                    <p class="arch-split__head">프론트엔드 · task-chat-front</p>
+                    <div class="layer-arch layer-arch--fe" role="group" aria-label="프론트엔드 레이어 구조">
+                      <div class="layer-arch__block">
+                        <div class="layer-arch__accent" aria-hidden="true"></div>
+                        <div class="layer-arch__body">
+                          <h3 class="layer-arch__name">Presentation</h3>
+                          <p class="layer-arch__detail">View 컴포넌트 · 로그인 / 채팅방 목록 / 채팅방 화면</p>
+                        </div>
+                      </div>
+                      <div class="layer-arch__flow" aria-hidden="true"><span>▼</span></div>
+                      <div class="layer-arch__block">
+                        <div class="layer-arch__accent" aria-hidden="true"></div>
+                        <div class="layer-arch__body">
+                          <h3 class="layer-arch__name">Application</h3>
+                          <p class="layer-arch__detail">화면 상태 · 이벤트 · 화면 전환 로직</p>
+                        </div>
+                      </div>
+                      <div class="layer-arch__flow" aria-hidden="true"><span>▼</span></div>
+                      <div class="layer-arch__block">
+                        <div class="layer-arch__accent" aria-hidden="true"></div>
+                        <div class="layer-arch__body">
+                          <h3 class="layer-arch__name">Integration</h3>
+                          <p class="layer-arch__detail">Axios REST 클라이언트 · WebSocket 메시지 송수신</p>
+                        </div>
+                      </div>
+                      <div class="layer-arch__flow" aria-hidden="true"><span>▼</span></div>
+                      <div class="layer-arch__block">
+                        <div class="layer-arch__accent" aria-hidden="true"></div>
+                        <div class="layer-arch__body">
+                          <h3 class="layer-arch__name">Bootstrap</h3>
+                          <p class="layer-arch__detail"><code>index</code> · <code>App</code> · CRA 빌드 · 환경 설정</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </figure>
+            </div>
+          </div>
+        </article>
+
+        <!-- 6 구현화면 -->
+        <article class="slide slide--diagram slide--impl" id="slide-6" data-title="구현화면" aria-hidden="true">
+          <div class="slide-inner">
+            <div class="section-num">06</div>
+            <h2>구현 화면</h2>
+            <p class="section-desc">
+              로그인·채팅방 목록·채팅 화면과 Swagger UI 캡처입니다. 실제 SPA 흐름과 API 문서 확인 화면을 함께 정리했습니다.
+            </p>
+            <div class="slide-diagram">
+              <div class="impl-gallery" role="group" aria-label="구현 화면 스크린샷">
+                <figure class="impl-shot">
+                  <img src="./img/user_set.png" width="640" height="400" alt="사용자 로그인 입력 화면" loading="lazy" decoding="async" />
+                  <figcaption>로그인</figcaption>
+                </figure>
+                <figure class="impl-shot">
+                  <img src="./img/chatroom_list.png" width="640" height="400" alt="채팅방 목록 화면" loading="lazy" decoding="async" />
+                  <figcaption>채팅방 목록</figcaption>
+                </figure>
+                <figure class="impl-shot">
+                  <img src="./img/chatroom.png" width="640" height="400" alt="채팅 메시지 화면" loading="lazy" decoding="async" />
+                  <figcaption>채팅 내용</figcaption>
+                </figure>
+                <figure class="impl-shot">
+                  <img src="./img/swagger.png" width="640" height="400" alt="Swagger API 문서 화면" loading="lazy" decoding="async" />
+                  <figcaption>Swagger UI</figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 7 마무리 -->
+        <article class="slide slide--diagram" id="slide-7" data-title="마무리" aria-hidden="true">
+          <div class="slide-inner">
+            <div class="section-num">07</div>
+            <h2>마무리</h2>
+            <p class="section-desc">완성도보다 실험 목적에 집중해, 레거시 전환 가능성과 학습 포인트를 검증했습니다.</p>
+            <div class="slide-diagram">
+              <figure class="diagram" role="group" aria-label="프로젝트 정리 내용">
+                <div class="close-summary">
+                  <p class="close-summary__lead">해당 프로젝트는 완벽함보다는 기존에 사용하지 않았던 기술을 적용해 보며, 현재 레거시 시스템에 자연스럽게 녹여낼 수 있는지 확인하는 데 목적을 둔 실험이었습니다.</p>
+                  <ul class="close-summary__list">
+                    <li class="close-summary__item">모놀리식 시스템을 MSA 환경으로 전환하기 위한 첫 단계로, 프론트엔드와 백엔드를 분리하는 구조를 검증해 가능성을 열어봤습니다.</li>
+                    <li class="close-summary__item">프로젝트 진행을 통해 아키텍처를 다시 학습하고, 설계 관점을 재정리하는 계기가 되었습니다.</li>
+                    <li class="close-summary__item">Kafka 동작 원리를 이해하고, Spring Boot 3.x 기반에서 기존 2.x 중심 시스템을 어떻게 마이그레이션할지 탐구할 수 있었습니다.</li>
+                    <li class="close-summary__item">AI 도구를 활용해 빠르게 개발하고 반복 개선할 수 있는 작업 방식을 경험했습니다.</li>
+                  </ul>
+                </div>
+              </figure>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <p class="kbd-hint" aria-hidden="true"><kbd>←</kbd> <kbd>→</kbd> 슬라이드 이동</p>
+
+  <script>
+    (function () {
+      var track = document.getElementById("deckTrack");
+      var slides = Array.prototype.slice.call(track.querySelectorAll(".slide"));
+      var total = slides.length;
+      var index = 0;
+      var toc = document.getElementById("deckToc");
+      var counter = document.getElementById("deckCounter");
+      var btnPrevTop = document.getElementById("btnPrevTop");
+      var btnNextTop = document.getElementById("btnNextTop");
+      var btnPrevSide = document.getElementById("btnPrevSide");
+      var btnNextSide = document.getElementById("btnNextSide");
+      var viewport = document.getElementById("deckViewport");
+
+      slides.forEach(function (slide, i) {
+        var t = slide.getAttribute("data-title") || "슬라이드 " + (i + 1);
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "toc-item" + (i === 0 ? " is-active" : "");
+        b.textContent = t;
+        b.setAttribute("data-index", String(i));
+        b.setAttribute("aria-label", "슬라이드: " + t);
+        b.addEventListener("click", function () { goTo(i); });
+        toc.appendChild(b);
+      });
+
+      var tocItems = Array.prototype.slice.call(toc.querySelectorAll(".toc-item"));
+
+      function goTo(i) {
+        if (i < 0) i = 0;
+        if (i >= total) i = total - 1;
+        index = i;
+        track.style.transform = "translateX(-" + index * 100 + "%)";
+        counter.textContent = index + 1 + " / " + total;
+        slides.forEach(function (s, j) {
+          s.setAttribute("aria-hidden", j === index ? "false" : "true");
+        });
+        tocItems.forEach(function (btn, j) {
+          btn.classList.toggle("is-active", j === index);
+        });
+        var disabledPrev = index <= 0;
+        var disabledNext = index >= total - 1;
+        btnPrevTop.disabled = disabledPrev;
+        btnNextTop.disabled = disabledNext;
+        btnPrevSide.disabled = disabledPrev;
+        btnNextSide.disabled = disabledNext;
+        if (tocItems[index]) {
+          tocItems[index].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        }
+      }
+
+      function next() { goTo(index + 1); }
+      function prev() { goTo(index - 1); }
+
+      btnNextTop.addEventListener("click", next);
+      btnPrevTop.addEventListener("click", prev);
+      btnNextSide.addEventListener("click", next);
+      btnPrevSide.addEventListener("click", prev);
+
+      document.addEventListener("keydown", function (e) {
+        var tag = (e.target && e.target.tagName) || "";
+        if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) return;
+        if (e.key === "ArrowRight" || e.key === "PageDown") {
+          e.preventDefault();
+          next();
+        } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+          e.preventDefault();
+          prev();
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          goTo(0);
+        } else if (e.key === "End") {
+          e.preventDefault();
+          goTo(total - 1);
+        }
+      });
+
+      var touchStartX = null;
+      var touchStartY = null;
+      var touchLastX = null;
+      var touchLastY = null;
+
+      viewport.addEventListener(
+        "touchstart",
+        function (e) {
+          if (!e.changedTouches.length) return;
+          var t = e.changedTouches[0];
+          touchStartX = t.clientX;
+          touchStartY = t.clientY;
+          touchLastX = t.clientX;
+          touchLastY = t.clientY;
+        },
+        { passive: true }
+      );
+
+      viewport.addEventListener(
+        "touchmove",
+        function (e) {
+          if (touchStartX == null || !e.changedTouches.length) return;
+          var t = e.changedTouches[0];
+          touchLastX = t.clientX;
+          touchLastY = t.clientY;
+          var dx = touchLastX - touchStartX;
+          var dy = touchLastY - touchStartY;
+          // 가로 스와이프가 우세할 때만 브라우저 기본 제스처를 막아 슬라이드 전환을 안정화.
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+            e.preventDefault();
+          }
+        },
+        { passive: false }
+      );
+
+      function finishSwipe(endX, endY) {
+        if (touchStartX == null || endX == null || endY == null) return;
+        var dx = endX - touchStartX;
+        var dy = endY - touchStartY;
+        touchStartX = null;
+        touchStartY = null;
+        touchLastX = null;
+        touchLastY = null;
+        if (Math.abs(dx) < 44 || Math.abs(dx) <= Math.abs(dy)) return;
+        if (dx < 0) next();
+        else prev();
+      }
+
+      viewport.addEventListener("touchend", function (e) {
+        if (!e.changedTouches.length) {
+          finishSwipe(touchLastX, touchLastY);
+          return;
+        }
+        var t = e.changedTouches[0];
+        finishSwipe(t.clientX, t.clientY);
+      });
+
+      viewport.addEventListener("touchcancel", function () {
+        touchStartX = null;
+        touchStartY = null;
+        touchLastX = null;
+        touchLastY = null;
+      });
+
+      goTo(0);
+    })();
+  </script>
+</body>
+</html>
